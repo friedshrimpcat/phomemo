@@ -1,556 +1,424 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>イベント出店スケジュール管理</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>レシート画像作成メーカー</title>
 
-  :root {
-    --bg: #faf9f7;
-    --surface: #ffffff;
-    --surface2: #f4f2ee;
-    --border: #e5e2da;
-    --border2: #d0cdc4;
-    --text: #1a1916;
-    --text2: #6b6760;
-    --text3: #a09d97;
-    --accent: #c17b4a;
-    --radius: 10px;
-    --radius-lg: 14px;
-  }
+  <script type="text/javascript" nonce="2faa3506cde043a1afbd41987cb" src="//local.adguard.org?ts=1795416489573&amp;type=content-script&amp;dmn=friedshrimpcat.s341.xrea.com&amp;url=https%3A%2F%2Ffriedshrimpcat.s341.xrea.com%2F&amp;app=chrome.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="2faa3506cde043a1afbd41987cb" src="//local.adguard.org?ts=1795416489573&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script><link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
 
-  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --text: #111827;
+      --border: #d1d5db;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --success: #10b981;
+      --danger: #dc2626;
+    }
 
-  /* Header */
-  .site-header {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
-    height: 56px; position: sticky; top: 0; z-index: 10;
-  }
-  .logo { font-size: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
-  .logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
-  .header-right { display: flex; align-items: center; gap: 10px; }
+    body {
+      /* 指定されたフォントとウェイトを適用 */
+      font-family: "Noto Sans JP", sans-serif;
+      font-weight: 400;
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
 
-  /* View toggle */
-  .view-toggle { display: flex; background: var(--surface2); border-radius: var(--radius); padding: 3px; gap: 2px; }
-  .toggle-btn {
-    background: none; border: none; border-radius: 7px; padding: 5px 12px;
-    font-size: 12px; font-weight: 500; font-family: inherit; cursor: pointer;
-    color: var(--text2); transition: all 0.15s; display: flex; align-items: center; gap: 5px;
-  }
-  .toggle-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .toggle-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 14px; font-size: 28px; }
+    p { margin-bottom: 20px; font-size: 14px; }
 
-  .add-btn {
-    background: var(--text); color: #fff; border: none; border-radius: var(--radius);
-    padding: 8px 16px; font-size: 13px; font-weight: 500; font-family: inherit;
-    cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.15s;
-  }
-  .add-btn:hover { opacity: 0.82; }
+    .wrap {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 30px;
+      align-items: start;
+    }
 
-  .main { max-width: 880px; margin: 0 auto; padding: 28px 20px 60px; }
+    @media (max-width: 850px) {
+      .wrap { grid-template-columns: 1fr; }
+      .preview-container { margin-top: 40px; justify-content: center; display: flex; }
+    }
 
-  /* Stats */
-  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
-  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-  .stat-num { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
-  .stat-label { font-size: 11px; color: var(--text2); margin-top: 5px; }
+    .editor {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 6px; margin-top: 16px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+    input[type="checkbox"] { width: auto; margin-right: 8px; }
 
-  /* LIST VIEW */
-  .list-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .filter-btn {
-    font-size: 12px; padding: 5px 14px; border-radius: 999px;
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text2); cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.12s;
-  }
-  .sort-select {
-    font-size: 12px; padding: 5px 10px; border-radius: var(--radius);
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text2); cursor: pointer; font-family: inherit; font-weight: 500;
-    appearance: none; padding-right: 24px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%236b6760' stroke-width='1.5'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 8px center;
-  }
-  .sort-select:focus { outline: none; border-color: var(--border2); }
-  .filter-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+    .btn {
+      padding: 10px 16px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn-secondary { background: #4b5563; }
+    .btn-success { background: var(--success); }
+    .btn-clear { background: #6b7280; }
+    .btn-danger { background: var(--danger); padding: 4px 10px; font-size: 16px; }
 
-  .event-list { display: flex; flex-direction: column; gap: 10px; }
-  .event-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    padding: 16px 18px; cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s;
-  }
-  .event-card:hover { border-color: var(--border2); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-  .event-name { font-size: 15px; font-weight: 700; color: var(--text); }
-  .event-date-text { font-size: 13px; color: var(--text2); margin-top: 3px; }
-  .card-badges { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
-  .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
-  .badge.applied      { background: #d4edbd; color: #2d5a1a; }
-  .badge.pending      { background: #fde5b0; color: #6b3f0a; }
-  .badge.not-applied  { background: #e5e2da; color: #4a4844; }
-  .badge.rejected     { background: #fcd4d4; color: #7a2020; }
-  .badge.hotel-booked    { background: #c8ede0; color: #115038; }
-  .badge.hotel-no-stay   { background: #e5e2da; color: #4a4844; }
-  .badge.hotel-none      { background: #fde5b0; color: #6b3f0a; }
-  .card-meta { display: flex; gap: 20px; border-top: 1px solid var(--border); padding-top: 10px; flex-wrap: wrap; }
-  .card-meta-item { font-size: 12px; color: var(--text2); }
-  .card-meta-item span { color: var(--text); font-weight: 500; }
-  .empty { text-align: center; padding: 48px 16px; color: var(--text2); font-size: 14px; }
+    .toggle-group {
+      background: #f9fafb;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-top: 8px;
+    }
 
-  /* CALENDAR VIEW */
-  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
-  .month-nav { display: flex; align-items: center; gap: 10px; }
-  .nav-btn {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    width: 32px; height: 32px; cursor: pointer; font-size: 16px; color: var(--text2);
-    display: flex; align-items: center; justify-content: center; transition: background 0.1s;
-  }
-  .nav-btn:hover { background: var(--surface2); }
-  .month-label { font-size: 17px; font-weight: 700; color: var(--text); min-width: 110px; text-align: center; }
-  .legend { display: flex; gap: 12px; flex-wrap: wrap; }
-  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
-  .leg-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .items-editor { display: flex; flex-direction: column; gap: 10px; }
+    .item-row {
+      display: grid;
+      grid-template-columns: 1fr 90px 60px 80px auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      background: #f9fafb;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
 
-  .cal-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-  .dow-row { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); background: var(--surface2); border-bottom: 1px solid var(--border); }
-  .dow { font-size: 11px; font-weight: 500; color: var(--text2); text-align: center; padding: 9px 0; }
-  .dow:first-child { color: #c0533a; }
-  .dow:last-child  { color: #3a7ec0; }
+    /* モバイルでの品名2段表示 */
+    @media (max-width: 600px) {
+      .item-row {
+        grid-template-columns: 1.5fr 1fr 1.2fr auto;
+        gap: 10px 8px;
+      }
+      .item-name-input {
+        grid-column: 1 / 5;
+      }
+    }
 
-  .days-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); }
-  .day-cell {
-    border-top: 1px solid var(--border); border-right: 1px solid var(--border);
-    min-height: 90px; padding: 6px 5px 4px; cursor: pointer; transition: background 0.1s;
-  }
-  .day-cell:hover { background: var(--surface2); }
-  .day-cell:nth-child(7n) { border-right: none; }
-  .day-cell.other-month { background: #faf9f7; }
-  .day-cell.other-month .day-num { color: var(--text3); }
-  .day-num {
-    font-size: 12px; font-weight: 500; color: var(--text);
-    width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; margin-bottom: 3px;
-  }
-  .day-cell.today .day-num { background: var(--accent); color: #fff !important; }
-  .day-cell.sunday .day-num   { color: #c0533a; }
-  .day-cell.saturday .day-num { color: #3a7ec0; }
+    #receipt {
+      width: 300px;
+      background: #fff;
+      color: #000;
+      padding: 20px 10px;
+      box-sizing: border-box;
+      /* フォントは全体設定に合わせ、最小16px以上を維持 */
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    .preview-container {
+      background: #fff;
+      padding: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
 
-  .ev-chip {
-    font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-bottom: 2px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    font-weight: 500; line-height: 1.5; cursor: pointer;
-  }
-  .ev-chip.applied      { background: #d4edbd; color: #2d5a1a; }
-  .ev-chip.pending      { background: #fde5b0; color: #6b3f0a; }
-  .ev-chip.not-applied  { background: #e5e2da; color: #4a4844; }
-  .ev-chip.rejected     { background: #fcd4d4; color: #7a2020; }
-  .ev-chip.cont { opacity: 0.45; }
+    #receipt .center { text-align: center; }
+    #receipt .bold { font-weight: bold; }
+    #receipt .line { border-bottom: 2px solid #000; margin: 8px 0; }
+    #receipt .sub-line { border-bottom: 1px dashed #000; margin: 8px 0; }
+    #receipt img#rLogo { max-width: 60%; height: auto; margin-bottom: 15px; display: none; margin-left: auto; margin-right: auto;}
+    
+    .receipt-name { font-size: 22px; margin: 15px 0; }
+    .store-name { font-size: 22px; margin-bottom: 10px; }
+    .r-item-top { display: flex; justify-content: space-between; font-weight: bold; }
+    .comment { font-size: 12px; color: #666666; }
+    .copy { text-align: center; margin-top: 40px; margin-bottom: 20px; }
+    
+    .r-summary-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 16px; }
+    .r-tax-indent { margin-left: auto; width: 85%; display: flex; justify-content: space-between; font-size: 16px;}
+    .r-total { font-size: 16px; padding: 5px 0; }
+    .footer-msg { font-size: 16px; margin-top: 15px; white-space: pre-wrap; }
+  </style>
 
-  /* Modal */
-  .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(26,25,22,0.4);
-    display: flex; align-items: center; justify-content: center; z-index: 200; padding: 16px;
-    animation: fadein 0.15s ease;
-  }
-  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
-  .modal {
-    background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border);
-    padding: 24px; width: min(480px, 100%); max-height: 90vh; overflow-y: auto;
-    animation: slidein 0.18s ease;
-  }
-  @keyframes slidein { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
-  .modal-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
 
-  .form-group { margin-bottom: 14px; }
-  .form-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; display: block; font-weight: 500; }
-  .form-input, .form-select {
-    width: 100%; padding: 9px 11px; border: 1px solid var(--border2); border-radius: var(--radius);
-    font-size: 13px; background: var(--surface); color: var(--text); font-family: inherit; transition: border-color 0.15s;
-  }
-  .form-input:focus, .form-select:focus { outline: none; border-color: var(--accent); }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; align-items: center; }
-  .btn { border-radius: var(--radius); padding: 9px 18px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; }
-  .btn-cancel { background: none; border: 1px solid var(--border2); color: var(--text2); }
-  .btn-cancel:hover { background: var(--surface2); }
-  .btn-save { background: var(--text); color: #fff; border: none; transition: opacity 0.15s; }
-  .btn-save:hover { opacity: 0.82; }
-  .btn-delete { background: none; border: 1px solid #f0c0c0; color: #b03030; margin-right: auto; }
-  .btn-delete:hover { background: #fff0f0; }
-
-  .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .detail-row:last-child { border-bottom: none; }
-  .detail-key { color: var(--text2); }
-  .detail-val { color: var(--text); font-weight: 500; }
-
-  /* Export/Import */
-  .data-bar { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 18px; }
-  .data-btn {
-    background: none; border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 6px 13px; font-size: 12px; font-weight: 500; font-family: inherit;
-    color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.12s;
-  }
-  .data-btn:hover { background: var(--surface); border-color: var(--border2); color: var(--text); }
-  .data-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-  .import-hint { font-size: 12px; color: var(--text2); margin-top: 8px; }
-  .import-hint.ok  { color: #2d5a1a; }
-  .import-hint.err { color: #b03030; }
-
-  @media (max-width: 560px) {
-    .stats { grid-template-columns: repeat(3, 1fr); }
-    .form-row { grid-template-columns: 1fr; }
-    .day-cell { min-height: 60px; }
-    .ev-chip { font-size: 9px; }
-    .site-header { padding: 0 14px; }
-    .add-btn-label { display: none; }
-    .main { padding: 18px 12px 60px; }
-    .toggle-label { display: none; }
-  }
-</style>
 </head>
 <body>
 
-<header class="site-header">
-  <div class="logo"><div class="logo-dot"></div>イベント出店スケジュール管理</div>
-  <div class="header-right">
-    <div class="view-toggle">
-      <button class="toggle-btn active" id="btn-list" onclick="setView('list')">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/>
-        </svg>
-        <span class="toggle-label">リスト</span>
-      </button>
-      <button class="toggle-btn" id="btn-cal" onclick="setView('cal')">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="2" y="2" width="12" height="12" rx="2"/>
-          <line x1="2" y1="6" x2="14" y2="6"/>
-          <line x1="6" y1="2" x2="6" y2="6"/>
-          <line x1="10" y1="2" x2="10" y2="6"/>
-        </svg>
-        <span class="toggle-label">カレンダー</span>
-      </button>
-    </div>
-    <button class="add-btn" onclick="openFormModal(null,null)">＋ <span class="add-btn-label">イベントを追加</span></button>
-  </div>
-</header>
+<div class="container">
+  <h1>レシート画像作成メーカー</h1>
+  <p>本ツールは、サーマルプリンター（Phomemo M02S など）での使用を想定した、レシート風画像作成メーカーです。画像作成後は、対応する各アプリの「画像印刷」機能から印刷してください（連絡先は<a href="https://x.com/GoldLicht0615">こちら</a>）</p>
+  <div class="wrap">
+    <div class="editor">
+      <label>ロゴ画像</label>
+      <input type="file" id="logoInput" accept="image/*" style="margin-bottom: 10px;">
 
-<main class="main">
-  <div class="data-bar">
-    <button class="data-btn" onclick="exportData()">
-      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v8M4 6l3 3 3-3"/><path d="M2 10v2a1 1 0 001 1h8a1 1 0 001-1v-2"/></svg>
-      エクスポート
-    </button>
-    <button class="data-btn" onclick="document.getElementById('import-input').click()">
-      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 9V1M4 4l3-3 3 3"/><path d="M2 10v2a1 1 0 001 1h8a1 1 0 001-1v-2"/></svg>
-      インポート
-    </button>
-    <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)">
-  </div>
-  <div class="stats" id="stats"></div>
-
-  <!-- LIST VIEW -->
-  <div id="list-view">
-    <div class="list-controls">
-      <div class="filter-row">
-        <button class="filter-btn active" onclick="setFilter('all',this)">すべて</button>
-        <button class="filter-btn" onclick="setFilter('applied',this)">申込済</button>
-        <button class="filter-btn" onclick="setFilter('pending',this)">検討中</button>
-        <button class="filter-btn" onclick="setFilter('not-applied',this)">未申込</button>
-        <button class="filter-btn" onclick="setFilter('rejected',this)">落選</button>
+      <label>店舗情報</label>
+      <input id="storeNameInput" placeholder="店舗名" value="サンプル商店">
+      <textarea id="storeInfoInput" placeholder="住所・連絡先" style="margin-top:8px;" rows="3">〒123-4567 東京都渋谷区&#10;TEL: 00-0000-0000&#10;登録番号：T0000000000000</textarea>
+      
+      <label style="margin-top:16px;">メッセージ</label>
+      <textarea id="footerInput">ご来店ありがとうございました。</textarea>
+      
+      <div style="display: flex; gap: 5px; margin-top:8px; align-items: center;">
+        <button id="saveTemplateBtn" class="btn btn-success" style="font-size: 11px; padding: 4px 8px;">テンプレート保存</button>
+        <span class="comment">※ロゴ・店舗情報・メッセージが保存されます</span>
       </div>
-      <select class="sort-select" id="sort-select" onchange="renderList()">
-        <option value="date-asc">日付が近い順</option>
-        <option value="date-desc">日付が遠い順</option>
-        <option value="name-asc">名前順（あ→ん）</option>
-        <option value="name-desc">名前順（ん→あ）</option>
-      </select>
-    </div>
-    <div class="event-list" id="event-list"></div>
-  </div>
-
-  <!-- CALENDAR VIEW -->
-  <div id="cal-view" style="display:none">
-    <div class="cal-header">
-      <div class="month-nav">
-        <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
-        <div class="month-label" id="month-label"></div>
-        <button class="nav-btn" onclick="changeMonth(1)">›</button>
+      
+      <div style="display: flex; gap: 10px; align-items: flex-end;">
+        <div style="flex-grow: 1;"><label>日付</label><input id="dateInput"></div>
+        <button id="nowBtn" class="btn">現在時刻</button>
       </div>
-      <div class="legend">
-        <div class="leg"><div class="leg-dot" style="background:#bddaed"></div>申込済</div>
-        <div class="leg"><div class="leg-dot" style="background:#fde5b0"></div>検討中</div>
-        <div class="leg"><div class="leg-dot" style="background:#e5e2da"></div>未申込</div>
-        <div class="leg"><div class="leg-dot" style="background:#fcd4d4"></div>落選</div>
+
+      <label>商品明細 (品名 / 単価 / 数 / 税率)</label>
+      <div id="itemsContainer" class="items-editor"></div>
+      <button id="addItemBtn" class="btn btn-secondary" style="width: 100%; margin-top: 12px;">＋ 行を追加</button>
+
+      <label>会計 (お預かり金額)</label>
+      <input type="number" id="cashInput" value="0">
+
+      <label>表示設定</label>
+      <div class="toggle-group">
+        <label><input type="checkbox" id="showTaxSummary"> 税額の内訳を表示する</label>
+      </div>
+      
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+      <button id="saveJpgBtn" class="btn" style="width: 100%; font-size: 18px; padding: 15px;">画像保存</button>
+      <button id="clearFormBtn" class="btn btn-clear" style="width: 100%; font-size: 18px; padding: 15px; margin-top: 15px;">商品明細・会計クリア</button>
+    </div>
+
+    <div class="preview-container">
+      <div id="receipt">
+        <img id="rLogo" src="">
+        <div id="rStoreName" class="center bold store-name"></div>
+        <div id="rStoreInfo" class="center" style="white-space: pre-wrap; font-size:16px;"></div>
+        <div class="center bold receipt-name">領　収　証</div>
+        <div class="line"></div>
+        <div id="rDate" style="font-size:16px;"></div>
+        <div class="line"></div>
+        
+        <div id="rItemsList"></div>
+        
+        <div id="rTaxSection" style="display:none;">
+          <div class="sub-line"></div>
+          <div class="r-summary-row"><span>小計</span></div>
+          <div id="rTaxArea"></div>
+          <div id="rReducedTaxNote" style="font-size:16px; margin-bottom:5px; display:none;">※軽減税率対象</div>
+        </div>
+        
+        <div class="line"></div>
+        <div class="r-summary-row r-total bold"><span>合計</span><span id="rGrandTotal"></span></div>
+        <div class="line"></div>
+        
+        <div class="r-summary-row"><span>お預かり</span><span id="rCash"></span></div>
+        <div class="r-summary-row"><span>お釣</span><span id="rChange"></span></div>
+        
+        <div id="rFooter" class="center footer-msg"></div>
       </div>
     </div>
-    <div class="cal-wrap">
-      <div class="dow-row">
-        <div class="dow">日</div><div class="dow">月</div><div class="dow">火</div>
-        <div class="dow">水</div><div class="dow">木</div><div class="dow">金</div><div class="dow">土</div>
-      </div>
-      <div class="days-grid" id="days-grid"></div>
-    </div>
   </div>
-</main>
+  <p class="copy">Copyright © 2026 FriedShrimpCat. All rights reserved.</p>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-const STORAGE_KEY = 'handmade-events-v2';
-const applyLabels = { 'applied':'申込済','pending':'検討中','not-applied':'未申込','rejected':'落選' };
-const hotelLabels  = { 'booked':'予約済','no-stay':'宿泊無','none':'未手配' };
+  const yen = (n) => "¥" + Math.round(n).toLocaleString();
+  const num = (s) => parseFloat(s) || 0;
+  const STORAGE_KEY = 'receipt_template_data_v2'; // 画像保存対応版キー
 
-let events = [];
-let currentYear, currentMonth;
-let currentView   = 'list';
-let currentFilter = 'all';
-
-function loadEvents() {
-  try { const s = localStorage.getItem(STORAGE_KEY); if (s) events = JSON.parse(s); } catch(e) { events = []; }
-  if (events.length === 0) {
-    const y = new Date().getFullYear();
-    events = [
-      { id:1, name:'ハンドメイドフェスタ大阪', dateFrom:y+'-05-10', dateTo:y+'-05-11', applyStatus:'applied',     applyDate:y+'-02-15', hotelStatus:'booked',   memo:'' },
-      { id:2, name:'クラフトマーケット京都',   dateFrom:y+'-06-20', dateTo:y+'-06-21', applyStatus:'pending',     applyDate:'',          hotelStatus:'none',     memo:'去年は200ブース' },
-      { id:3, name:'てづくり市 神戸',          dateFrom:y+'-07-05', dateTo:y+'-07-05', applyStatus:'not-applied', applyDate:'',          hotelStatus:'no-stay',  memo:'' },
-    ];
-  }
-}
-function saveEvents() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(events)); } catch(e) {} }
-
-function toYMD(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function fmtDate(s) { if (!s) return '—'; const [y,m,d]=s.split('-'); return `${y}年${parseInt(m)}月${parseInt(d)}日`; }
-function fmtRange(from,to) {
-  if (!from) return '—';
-  if (!to||from===to) return fmtDate(from);
-  const [y1,m1,d1]=from.split('-'); const [,m2,d2]=to.split('-');
-  if (m1===m2) return `${y1}年${parseInt(m1)}月${parseInt(d1)}日〜${parseInt(d2)}日`;
-  return fmtDate(from)+' 〜 '+fmtDate(to);
-}
-
-/* View switcher */
-function setView(v) {
-  currentView = v;
-  document.getElementById('list-view').style.display = v==='list' ? 'block' : 'none';
-  document.getElementById('cal-view').style.display  = v==='cal'  ? 'block' : 'none';
-  document.getElementById('btn-list').classList.toggle('active', v==='list');
-  document.getElementById('btn-cal').classList.toggle('active',  v==='cal');
-  render();
-}
-
-function render() { renderStats(); currentView==='list' ? renderList() : renderCalendar(); }
-
-/* Stats */
-function renderStats() {
-  const total      = events.length;
-  const applied    = events.filter(e=>e.applyStatus==='applied').length;
-  const pending    = events.filter(e=>e.applyStatus==='pending').length;
-  const notApplied = events.filter(e=>e.applyStatus==='not-applied').length;
-  const rejected   = events.filter(e=>e.applyStatus==='rejected').length;
-  document.getElementById('stats').innerHTML = `
-    <div class="stat"><div class="stat-num">${total}</div><div class="stat-label">登録イベント</div></div>
-    <div class="stat"><div class="stat-num">${applied}</div><div class="stat-label">申込済</div></div>
-    <div class="stat"><div class="stat-num">${pending}</div><div class="stat-label">検討中</div></div>
-    <div class="stat"><div class="stat-num">${notApplied}</div><div class="stat-label">未申込</div></div>
-    <div class="stat"><div class="stat-num">${rejected}</div><div class="stat-label">落選</div></div>
-  `;
-}
-
-/* List */
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderList();
-}
-function renderList() {
-  const filtered = currentFilter==='all' ? events : events.filter(e=>e.applyStatus===currentFilter);
-  const sortVal = document.getElementById('sort-select')?.value || 'date-asc';
-  const sorted = [...filtered].sort((a,b)=>{
-    if (sortVal==='date-asc')  return a.dateFrom.localeCompare(b.dateFrom);
-    if (sortVal==='date-desc') return b.dateFrom.localeCompare(a.dateFrom);
-    if (sortVal==='name-asc')  return a.name.localeCompare(b.name,'ja');
-    if (sortVal==='name-desc') return b.name.localeCompare(a.name,'ja');
-    return 0;
-  });
-  const el = document.getElementById('event-list');
-  if (!sorted.length) { el.innerHTML='<div class="empty">該当するイベントがありません</div>'; return; }
-  el.innerHTML = sorted.map(ev=>`
-    <div class="event-card" onclick="showDetail(${ev.id})">
-      <div class="card-top">
-        <div>
-          <div class="event-name">${ev.name}</div>
-          <div class="event-date-text">${fmtRange(ev.dateFrom,ev.dateTo)}</div>
-        </div>
-        <div class="card-badges">
-          <span class="badge ${ev.applyStatus}">${applyLabels[ev.applyStatus]}</span>
-          <span class="badge hotel-${ev.hotelStatus}">${hotelLabels[ev.hotelStatus]}</span>
-        </div>
-      </div>
-      <div class="card-meta">
-        <div class="card-meta-item">申込日：<span>${fmtDate(ev.applyDate)}</span></div>
-        ${ev.memo?`<div class="card-meta-item">メモ：<span>${ev.memo}</span></div>`:''}
-      </div>
-    </div>
-  `).join('');
-}
-
-/* Calendar */
-function changeMonth(d) {
-  currentMonth+=d;
-  if (currentMonth>11){currentMonth=0;currentYear++;}
-  if (currentMonth<0){currentMonth=11;currentYear--;}
-  renderCalendar();
-}
-function renderCalendar() {
-  const y=currentYear, m=currentMonth;
-  document.getElementById('month-label').textContent=`${y}年${m+1}月`;
-  const first=new Date(y,m,1), last=new Date(y,m+1,0), today=toYMD(new Date());
-  const cells=[];
-  for(let i=0;i<first.getDay();i++){const d=new Date(y,m,1-(first.getDay()-i));cells.push({date:toYMD(d),inMonth:false});}
-  for(let d=1;d<=last.getDate();d++) cells.push({date:toYMD(new Date(y,m,d)),inMonth:true});
-  while(cells.length%7!==0){const prev=cells[cells.length-1].date;const nd=new Date(prev+'T00:00:00');nd.setDate(nd.getDate()+1);cells.push({date:toYMD(nd),inMonth:false});}
-  document.getElementById('days-grid').innerHTML = cells.map((cell,idx)=>{
-    const dow=idx%7, dayNum=parseInt(cell.date.split('-')[2]);
-    const cls=['day-cell',!cell.inMonth?'other-month':'',cell.date===today?'today':'',dow===0?'sunday':'',dow===6?'saturday':''].filter(Boolean).join(' ');
-    const dayEvs=events.filter(ev=>{const from=ev.dateFrom,to=ev.dateTo||ev.dateFrom;return cell.date>=from&&cell.date<=to;});
-    const chips=dayEvs.map(ev=>{
-      const isFirst=cell.date===ev.dateFrom;
-      return `<div class="ev-chip ${ev.applyStatus}${!isFirst?' cont':''}" onclick="event.stopPropagation();showDetail(${ev.id})" title="${ev.name}">${isFirst?ev.name:'　'}</div>`;
-    }).join('');
-    return `<div class="${cls}" onclick="openFormModal(null,'${cell.date}')"><div class="day-num">${dayNum}</div>${chips}</div>`;
-  }).join('');
-}
-
-/* Detail */
-function showDetail(id) {
-  const ev=events.find(e=>e.id===id); if(!ev) return;
-  const bd=document.createElement('div'); bd.className='modal-backdrop';
-  bd.innerHTML=`<div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-title">${ev.name}</div>
-    <div>
-      <div class="detail-row"><span class="detail-key">開催日程</span><span class="detail-val">${fmtRange(ev.dateFrom,ev.dateTo)}</span></div>
-      <div class="detail-row"><span class="detail-key">申込状況</span><span class="badge ${ev.applyStatus}">${applyLabels[ev.applyStatus]}</span></div>
-      <div class="detail-row"><span class="detail-key">申込日</span><span class="detail-val">${fmtDate(ev.applyDate)}</span></div>
-      <div class="detail-row"><span class="detail-key">ホテル予約</span><span class="badge hotel-${ev.hotelStatus}">${hotelLabels[ev.hotelStatus]}</span></div>
-      ${ev.memo?`<div class="detail-row"><span class="detail-key">メモ</span><span class="detail-val">${ev.memo}</span></div>`:''}
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-delete" onclick="deleteEvent(${ev.id})">削除</button>
-      <button class="btn btn-cancel" onclick="closeModal()">閉じる</button>
-      <button class="btn btn-save" onclick="closeModal();openFormModal(${ev.id},null)">編集</button>
-    </div>
-  </div>`;
-  bd.addEventListener('click',closeModal); document.body.appendChild(bd);
-}
-
-/* Form */
-function openFormModal(id, dateStr) {
-  const ev=id?events.find(e=>e.id===id):null, isEdit=!!ev;
-  const defDate=dateStr||(ev?ev.dateFrom:'');
-  const bd=document.createElement('div'); bd.className='modal-backdrop';
-  bd.innerHTML=`<div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-title">${isEdit?'イベントを編集':'イベントを追加'}</div>
-    <div class="form-group">
-      <label class="form-label">イベント名</label>
-      <input class="form-input" id="f-name" placeholder="例：フェスタ" value="${ev?ev.name:''}">
-    </div>
-    <div class="form-row form-group">
-      <div><label class="form-label">開始日</label><input class="form-input" id="f-from" type="date" value="${ev?ev.dateFrom:defDate}"></div>
-      <div><label class="form-label">終了日</label><input class="form-input" id="f-to" type="date" value="${ev?ev.dateTo:defDate}"></div>
-    </div>
-    <div class="form-row form-group">
-      <div>
-        <label class="form-label">申込状況</label>
-        <select class="form-select" id="f-apply">
-          ${['not-applied','pending','applied','rejected'].map(v=>`<option value="${v}" ${ev&&ev.applyStatus===v?'selected':''}>${applyLabels[v]}</option>`).join('')}
-        </select>
-      </div>
-      <div><label class="form-label">申込日</label><input class="form-input" id="f-applydate" type="date" value="${ev?ev.applyDate:''}"></div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">ホテル予約状況</label>
-      <select class="form-select" id="f-hotel">
-        ${['none','no-stay','booked'].map(v=>`<option value="${v}" ${ev&&ev.hotelStatus===v?'selected':''}>${hotelLabels[v]}</option>`).join('')}
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">メモ</label>
-      <input class="form-input" id="f-memo" placeholder="自由にメモ" value="${ev?ev.memo:''}">
-    </div>
-    <div class="modal-actions">
-      ${isEdit?`<button class="btn btn-delete" onclick="deleteEvent(${id})">削除</button>`:''}
-      <button class="btn btn-cancel" onclick="closeModal()">キャンセル</button>
-      <button class="btn btn-save" onclick="saveEvent(${id||'null'})">保存</button>
-    </div>
-  </div>`;
-  bd.addEventListener('click',closeModal); document.body.appendChild(bd);
-}
-
-function closeModal() { const bd=document.querySelector('.modal-backdrop'); if(bd) bd.remove(); }
-
-function saveEvent(id) {
-  const name=document.getElementById('f-name').value.trim();
-  if(!name){alert('イベント名を入力してください');return;}
-  const data={name,dateFrom:document.getElementById('f-from').value,dateTo:document.getElementById('f-to').value,applyStatus:document.getElementById('f-apply').value,applyDate:document.getElementById('f-applydate').value,hotelStatus:document.getElementById('f-hotel').value,memo:document.getElementById('f-memo').value.trim()};
-  if(id){const idx=events.findIndex(e=>e.id===id);events[idx]={...events[idx],...data};}
-  else{data.id=Date.now();events.push(data);}
-  saveEvents(); closeModal(); render();
-}
-
-function deleteEvent(id) {
-  if(!confirm('このイベントを削除しますか？'))return;
-  events=events.filter(e=>e.id!==id); saveEvents(); closeModal(); render();
-}
-
-/* Export / Import */
-function exportData() {
-  if (!events.length) { alert('エクスポートするイベントがありません'); return; }
-  const json = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), events }, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  const date = new Date().toISOString().slice(0,10);
-  a.href = url; a.download = `handmade-events-${date}.json`;
-  a.click(); URL.revokeObjectURL(url);
-}
-
-function importData(e) {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const parsed = JSON.parse(ev.target.result);
-      const imported = parsed.events || parsed;
-      if (!Array.isArray(imported)) throw new Error('invalid');
-      const valid = imported.filter(ev => ev.id && ev.name && ev.dateFrom);
-      if (!valid.length) throw new Error('no valid events');
-      const merge = confirm(`${valid.length}件のイベントが見つかりました。\n\n「OK」→ 現在のデータに追加\n「キャンセル」→ 現在のデータを置き換え`);
-      if (merge) {
-        const existingIds = new Set(events.map(e=>e.id));
-        const newEvs = valid.filter(e=>!existingIds.has(e.id));
-        events = [...events, ...newEvs];
-        alert(`${newEvs.length}件を追加しました。`);
-      } else {
-        if (!confirm('現在のデータをすべて置き換えます。よろしいですか？')) return;
-        events = valid;
-        alert(`${valid.length}件のイベントを読み込みました。`);
-      }
-      saveEvents(); render();
-    } catch(err) {
-      alert('ファイルの読み込みに失敗しました。\n正しいエクスポートファイルを選択してください。');
+  function init() {
+    loadTemplate();
+    if(!document.getElementById('dateInput').value) {
+      document.getElementById('dateInput').value = getCurrentDateTime();
     }
-    e.target.value = '';
-  };
-  reader.readAsText(file);
-}
+    addItem('商品A', 0, 1, 0);
 
-/* Init */
-const now=new Date(); currentYear=now.getFullYear(); currentMonth=now.getMonth();
-loadEvents(); render();
+    document.getElementById('addItemBtn').onclick = () => addItem();
+    document.getElementById('nowBtn').onclick = () => {
+        document.getElementById('dateInput').value = getCurrentDateTime();
+        updatePreview();
+    };
+
+    document.getElementById('saveTemplateBtn').onclick = saveTemplate;
+    document.getElementById('clearFormBtn').onclick = clearForm;
+    
+    document.querySelectorAll('.editor input, .editor textarea, .editor select').forEach(el => {
+      if(el.id !== 'logoInput') el.oninput = updatePreview;
+    });
+
+    document.getElementById('logoInput').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                document.getElementById('rLogo').src = ev.target.result;
+                document.getElementById('rLogo').style.display = 'block';
+                updatePreview();
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    updatePreview();
+  }
+
+  function getCurrentDateTime() {
+    return new Date().toLocaleString('ja-JP').slice(0, -3);
+  }
+
+  // ファイル名用のタイムスタンプ取得
+  function getFormattedTimestamp() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const h = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    return `${y}${m}${d}${h}${min}${s}`;
+  }
+
+  function clearForm() {
+    if (confirm('商品明細とお預かり金額をクリアしますか？\n（テンプレート内容は保持されます）')) {
+      document.getElementById('itemsContainer').innerHTML = '';
+      addItem();
+      document.getElementById('cashInput').value = 0;
+      updatePreview();
+    }
+  }
+
+  // ロゴ画像を含むテンプレート保存
+  function saveTemplate() {
+    const rLogo = document.getElementById('rLogo');
+    const data = {
+      storeName: document.getElementById('storeNameInput').value,
+      storeInfo: document.getElementById('storeInfoInput').value,
+      footer: document.getElementById('footerInput').value,
+      logoSrc: rLogo.style.display !== 'none' ? rLogo.src : ''
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      alert('ロゴ画像を含む店舗情報を保存しました。');
+    } catch (e) {
+      alert('エラー：画像の容量が大きすぎるため保存できません。より小さい画像を使用してください。');
+    }
+  }
+
+  // テンプレート読み込み
+  function loadTemplate() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      document.getElementById('storeNameInput').value = data.storeName;
+      document.getElementById('storeInfoInput').value = data.storeInfo;
+      document.getElementById('footerInput').value = data.footer;
+      if (data.logoSrc) {
+        const rLogo = document.getElementById('rLogo');
+        rLogo.src = data.logoSrc;
+        rLogo.style.display = 'block';
+      }
+    }
+  }
+
+  function addItem(name='', price='', qty=1, tax=10) {
+    const div = document.createElement('div');
+    div.className = 'item-row';
+    div.innerHTML = `
+      <input class="item-name-input" placeholder="品名" value="${name}">
+      <input type="number" class="item-price-input" placeholder="単価" value="${price}">
+      <input type="number" class="item-qty-input" placeholder="数" value="${qty}">
+      <select class="item-tax-input">
+        <option value="10" ${tax==10?'selected':''}>10%</option>
+        <option value="8" ${tax==8?'selected':''}>8%</option>
+        <option value="0" ${tax==0?'selected':''}>0%</option>
+      </select>
+      <button class="btn btn-danger">×</button>
+    `;
+    div.querySelector('.btn-danger').onclick = () => { div.remove(); updatePreview(); };
+    div.querySelectorAll('input, select').forEach(el => el.oninput = updatePreview);
+    document.getElementById('itemsContainer').appendChild(div);
+    updatePreview();
+  }
+
+  function updatePreview() {
+    document.getElementById('rStoreName').textContent = document.getElementById('storeNameInput').value;
+    document.getElementById('rStoreInfo').textContent = document.getElementById('storeInfoInput').value;
+    document.getElementById('rDate').textContent = document.getElementById('dateInput').value;
+    document.getElementById('rFooter').textContent = document.getElementById('footerInput').value;
+
+    const showTax = document.getElementById('showTaxSummary').checked;
+    const list = document.getElementById('rItemsList');
+    list.innerHTML = '';
+    
+    let totalAllIncl = 0;
+    const taxMap = new Map();
+    let hasReducedTax = false;
+
+    document.querySelectorAll('.item-row').forEach(row => {
+        const n = row.querySelector('.item-name-input').value || '商品';
+        const p = num(row.querySelector('.item-price-input').value);
+        const q = num(row.querySelector('.item-qty-input').value);
+        const t = num(row.querySelector('.item-tax-input').value);
+
+        const lineEx = p * q;
+        const lineTax = Math.floor(lineEx * t / 100);
+        const lineIncl = lineEx + lineTax;
+
+        totalAllIncl += lineIncl;
+        taxMap.set(t, (taxMap.get(t) || 0) + lineEx);
+        if(t === 8) hasReducedTax = true;
+
+        list.innerHTML += `<div style="margin-bottom:5px;">
+                            <div class="r-item-top"><span>${n} &nbsp; ×${q}</span><span>${yen(lineIncl)}</span></div>
+                           </div>`;
+    });
+
+    const taxArea = document.getElementById('rTaxArea');
+    const taxSection = document.getElementById('rTaxSection');
+    taxArea.innerHTML = '';
+    
+    if (showTax) {
+      taxSection.style.display = 'block';
+      [...taxMap.keys()].sort((a,b)=>b-a).forEach(rate => {
+          const exAmt = taxMap.get(rate);
+          const taxVal = Math.floor(exAmt * rate / 100);
+          const inclAmt = exAmt + taxVal;
+
+          taxArea.innerHTML += `
+            <div class="r-summary-row"><span>${rate}％対象</span><span>${yen(inclAmt)}</span></div>
+            <div class="r-tax-indent"><span>(内 消費税額</span><span>${yen(taxVal)})</span></div>
+          `;
+      });
+      document.getElementById('rReducedTaxNote').style.display = hasReducedTax ? 'block' : 'none';
+    } else {
+      taxSection.style.display = 'none';
+    }
+
+    document.getElementById('rGrandTotal').textContent = yen(totalAllIncl);
+
+    const cash = num(document.getElementById('cashInput').value);
+    document.getElementById('rCash').textContent = yen(cash);
+    document.getElementById('rChange').textContent = yen(Math.max(0, cash - totalAllIncl));
+  }
+
+  // ファイル名に日時を含めて保存
+  document.getElementById('saveJpgBtn').onclick = async function() {
+      this.disabled = true; this.textContent = '生成中...';
+      const canvas = await html2canvas(document.getElementById('receipt'), { 
+          scale: 2,
+          backgroundColor: "#ffffff"
+      });
+      const link = document.createElement('a');
+      link.download = `receipt_${getFormattedTimestamp()}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.9);
+      link.click();
+      this.disabled = false; this.textContent = '画像保存';
+  };
+
+  init();
 </script>
 </body>
 </html>
